@@ -21,6 +21,8 @@ library(caret)
 library(kernlab)
 library(e1071)
 library(gbm)
+library(ISLR)
+library(factoextra)
 
 set.seed(202605)
 ```
@@ -257,12 +259,92 @@ The performance of the three models was compared using the test error rate. The 
 
 
 
+# Problem Two
+
+```{r}
+data("USArrests")
+```
 
 
+## Part I
 
 
+```{r fig.width=20, fig.height=10}
+hc_complete <- hclust(
+  dist(USArrests),
+  method = "complete"
+)
+
+fviz_dend(
+  hc_complete,
+  k = 3,
+  cex = 0.4,
+  palette = "jco",
+  color_labels_by_k = TRUE,
+  rect = TRUE,
+  rect_fill = TRUE,
+  rect_border = "jco",
+  labels_track_height = 2.5
+)
+```
 
 
+```{r}
+cluster_unscaled <- cutree(hc_complete, k = 3)
+split(names(cluster_unscaled), cluster_unscaled)
+```
+
+
+## Part II
+
+```{r}
+# Scale the variables
+dat_scaled <- scale(USArrests)
+
+# Hierarchical clustering with complete linkage and Euclidean distance
+hc_complete_scaled <- hclust(
+  dist(dat_scaled),
+  method = "complete"
+)
+
+# Plot dendrogram
+fviz_dend(
+  hc_complete_scaled,
+  k = 3,
+  horiz = TRUE,
+  cex = 0.6,
+  palette = "jco",
+  color_labels_by_k = TRUE,
+  rect = TRUE,
+  rect_fill = TRUE,
+  rect_border = "jco"
+)
+
+# Cut into 3 clusters
+cluster_scaled <- cutree(hc_complete_scaled, k = 3)
+
+# List states in each cluster
+cluster_list_scaled <- split(names(cluster_scaled), cluster_scaled)
+
+cluster_list_scaled
+
+# Compare with unscaled clustering
+table(
+  Unscaled = cluster_unscaled,
+  Scaled = cluster_scaled
+)
+```
+
+* After scaling the variables to have standard deviation one, I repeated hierarchical clustering using complete linkage and Euclidean distance and cut the dendrogram into three clusters.  
+
+* The resulting clusters were:   
+  * Cluster 1: Alabama, Alaska, Georgia, Louisiana, Mississippi, North Carolina, South Carolina, Tennessee.  
+
+  * Cluster 2: Arizona, California, Colorado, Florida, Illinois, Maryland, Michigan, Nevada, New Mexico, New York, Texas.  
+
+  * Cluster 3: Arkansas, Connecticut, Delaware, Hawaii, Idaho, Indiana, Iowa, Kansas, Kentucky, Maine, Massachusetts, Minnesota, Missouri, Montana, Nebraska, New Hampshire, New Jersey, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, Rhode Island, South Dakota, Utah, Vermont, Virginia, Washington, West Virginia, Wisconsin, Wyoming.  
+
+Scaling changed the clustering results. The cross-tabulation between the unscaled and scaled cluster assignments shows that several states moved to different clusters after scaling.In my opinion, the variables should be scaled before computing the inter-observation dissimilarities. The variables are measured on different scales, and Euclidean distance can be dominated by variables with larger numerical ranges, such as Assault. Scaling puts the variables on a comparable scale, so each variable contributes more equally to the distance calculation.  
 
 
 
