@@ -20,6 +20,7 @@ library(tidymodels)
 library(caret)
 library(kernlab)
 library(e1071)
+library(gbm)
 
 set.seed(202605)
 ```
@@ -171,17 +172,88 @@ df_radial_result
 ```
 
 
-Using 10-fold cross-validation, the best radial SVM selected `cost = 26.466` and `$\gamma$ = 0.0113`. The resulting training error rate was `7.66%`, and the test error rate was `6.78%`. Compared with the linear SVC, the radial SVM slightly reduced the training error, but it did not improve the test error rate.  
+Using 10-fold cross-validation, the best radial SVM selected `cost = 26.466` and `gamma = 0.0113`. The resulting training error rate was `7.66%`, and the test error rate was `6.78%`. Compared with the linear SVC, the radial SVM slightly reduced the training error, but it did not improve the test error rate.  
 
 
+## Part III
+
+```{r}
+set.seed(202605)
+
+ctrl <- trainControl(
+  method = "cv",
+  number = 10
+)
+
+gbm_grid <- expand.grid(
+  n.trees = c(100, 200, 500, 1000, 2000, 5000),
+  interaction.depth = 1:4,
+  shrinkage = c(0.005, 0.01, 0.05),
+  n.minobsinnode = c(10)
+)
+```
 
 
+```{r}
+set.seed(202605)
+
+gbm_fit <- train(
+  mpg_cat ~ cylinders + displacement + horsepower + weight +
+    acceleration + year + origin,
+  data = df_auto_train,
+  method = "gbm",
+  tuneGrid = gbm_grid,
+  trControl = ctrl,
+  metric = "Accuracy",
+  verbose = FALSE
+)
+
+gbm_fit
+gbm_fit$bestTune
+plot(gbm_fit)
+```
 
 
+```{r}
+gbm_train_pred <- predict(gbm_fit, newdata = df_auto_train)
+gbm_test_pred <- predict(gbm_fit, newdata = df_auto_test)
+
+gbm_train_error <- mean(gbm_train_pred != df_auto_train$mpg_cat)
+gbm_test_error <- mean(gbm_test_pred != df_auto_test$mpg_cat)
+
+df_gbm_result <- tibble(
+  Model = "Boosting",
+  Best_n_trees = gbm_fit$bestTune$n.trees,
+  Best_Depth = gbm_fit$bestTune$interaction.depth,
+  Best_Shrinkage = gbm_fit$bestTune$shrinkage,
+  Best_Minobsinnode = gbm_fit$bestTune$n.minobsinnode,
+  Training_Error = gbm_train_error,
+  Test_Error = gbm_test_error
+)
+
+df_gbm_result
+```
 
 
+```{r}
+df_model_compare <- tibble(
+  Model = c("SVC", "Radial SVM", "Boosting"),
+  Training_Error = c(
+    svc_train_error,
+    radial_train_error,
+    gbm_train_error
+  ),
+  Test_Error = c(
+    svc_test_error,
+    radial_test_error,
+    gbm_test_error
+  )
+)
 
+df_model_compare
+```
 
+The performance of the three models was compared using the test error rate. The SVC and radial SVM both had a test error rate of `0.0678`, while the boosting model had a lower test error rate of `0.0424`. Therefore, boosting provided the best predictive performance on this dataset. Neither the linear SVC nor the radial kernel SVM outperformed boosting.  
 
 
 
