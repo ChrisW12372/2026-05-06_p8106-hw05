@@ -108,16 +108,70 @@ I fit a support vector classifier with a linear kernel using the `e1071` package
 
 ## Part II
 
+```{r}
+set.seed(202605)
+
+cost_grid <- exp(seq(-5, 5, len = 30))
+gamma_grid <- exp(seq(-10, -2, len = 30))
+
+radial_tune_svm <- tune.svm(
+  mpg_cat ~ cylinders + displacement + horsepower + weight +
+    acceleration + year + origin,
+  data = df_auto_train,
+  kernel = "radial",
+  cost = cost_grid,
+  gamma = gamma_grid,
+  scale = TRUE,
+  tunecontrol = tune.control(cross = 10)
+)
+
+summary(radial_tune_svm)
+plot(
+  radial_tune_svm,
+  transform.y = log,
+  transform.x = log,
+  color.palette = terrain.colors
+)
+```
 
 
+```{r}
+best_radial_svm <- radial_tune_svm$best.model
+```
 
 
+```{r}
+radial_train_pred <- predict(best_radial_svm, newdata = df_auto_train)
+
+radial_train_error <- mean(radial_train_pred != df_auto_train$mpg_cat)
+
+radial_train_error
+```
 
 
+```{r}
+radial_test_pred <- predict(best_radial_svm, newdata = df_auto_test)
+
+radial_test_error <- mean(radial_test_pred != df_auto_test$mpg_cat)
+
+radial_test_error
+```
 
 
+```{r}
+df_radial_result <- tibble(
+  Model = "Radial SVM",
+  Best_Cost = radial_tune_svm$best.parameters$cost,
+  Best_Gamma = radial_tune_svm$best.parameters$gamma,
+  Training_Error = radial_train_error,
+  Test_Error = radial_test_error
+)
+
+df_radial_result
+```
 
 
+Using 10-fold cross-validation, the best radial SVM selected `cost = 26.466` and `$\gamma$ = 0.0113`. The resulting training error rate was `7.66%`, and the test error rate was `6.78%`. Compared with the linear SVC, the radial SVM slightly reduced the training error, but it did not improve the test error rate.  
 
 
 
