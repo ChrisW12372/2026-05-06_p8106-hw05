@@ -1,0 +1,183 @@
+---
+title: "2026-05-06_hw05"
+author: "Chris"
+date: "2026-05-06"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    number_sections: TRUE
+    theme: cosmo
+    css: style.css
+---
+
+The project is on GitHub: https://github.com/ChrisW12372/2026-05-06_p8106-hw05.git  
+
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(caret)
+library(kernlab)
+library(e1071)
+
+set.seed(202605)
+```
+
+
+# Problem One
+
+```{r}
+set.seed(202605)
+df_auto <- read_csv("data/auto.csv") |>
+  mutate(
+    mpg_cat = factor(mpg_cat),
+    origin = factor(origin)
+  )
+
+data_split <- initial_split(df_auto, prop = 0.7)
+df_auto_train <- training(data_split)
+df_auto_test <- testing(data_split)
+```
+
+
+## Part I
+
+```{r}
+set.seed(202605)
+
+cost_grid <- exp(seq(-5, 5, len = 100))
+
+linear_tune_svc <- tune.svm(
+  mpg_cat ~ cylinders + displacement + horsepower + weight + 
+    acceleration + year + origin,
+  data = df_auto_train,
+  kernel = "linear",
+  cost = cost_grid,
+  scale = TRUE,
+  tunecontrol = tune.control(cross = 10)
+)
+
+```
+
+
+
+```{r}
+summary(linear_tune_svc)
+plot(linear_tune_svc)
+
+linear_tune_svc$best.parameters
+```
+
+```{r}
+# get the optimal classifier
+best_svc <- linear_tune_svc$best.model
+```
+
+
+```{r}
+svc_train_pred <- predict(best_svc, newdata = df_auto_train)
+svc_train_error <- mean(svc_train_pred != df_auto_train$mpg_cat)
+
+svc_train_error
+```
+
+
+```{r}
+svc_test_pred <- predict(best_svc, newdata = df_auto_test)
+svc_test_error <- mean(svc_test_pred != df_auto_test$mpg_cat)
+
+svc_test_error
+```
+
+
+```{r}
+df_svc_result <- tibble(
+  Model = "SVC",
+  Best_Cost = linear_tune_svc$best.parameters$cost,
+  Training_Error = svc_train_error,
+  Test_Error = svc_test_error
+)
+
+df_svc_result
+```
+
+
+I fit a support vector classifier with a linear kernel using the `e1071` package. The cost parameter was selected by 10-fold cross-validation. The best selected cost was `3.535`. Using this model, the training error rate was `0.0803`, and the test error rate was `0.0678`.  
+
+
+## Part II
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
